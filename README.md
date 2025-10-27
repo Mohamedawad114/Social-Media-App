@@ -1,3 +1,4 @@
+
 # 🚀 Social Media Platform (Node.js + TypeScript + MongoDB)
 
 A *scalable, production-grade social media backend* built with *TypeScript, **Node.js, **Express, and **MongoDB* —  
@@ -241,16 +242,17 @@ featuring a clean **OOP architecture**, **Redis caching**, **real-time chat**, a
 ---
 👉 http://localhost:3000/api-docs
 to explore the Swagger API documentation.
-### ⚙ Installation
+## ⚙ Installation
 
-```bash
+bash
 # Clone the repo
 git clone https://github.com/Mohamedawad114/Social-Media-App.git
 
 # Install dependencies
 npm install
 
-
+# Copy environment variables
+cp .env.example .env
 
 # Run development server
 npm run dev
