@@ -1,88 +1,89 @@
+# 🚀 Social Media Platform (Node.js + TypeScript + OOP)
 
-# 🚀 Social Media Platform (Node.js + TypeScript + MongoDB)
-
-A **scalable, production-grade social media backend** built with **TypeScript**, **Node.js**, **Express**, and **MongoDB** —  
-featuring a clean **OOP architecture**, **Redis caching**, **real-time chat**, and **secure authentication**.
+A *modern, scalable social media backend* built with *TypeScript, **Node.js, **Express, and **MongoDB*,  
+featuring *OOP architecture, **Zod validation, **AWS S3 integration, **Redis caching, **Socket.io real-time chat*,  
+and *secure OAuth2 authentication*.
 
 ---
 
 ## 🧩 Core Features
 
-### 👤 User System
+### 👤 User Management
 - Register, login, and OAuth2 authentication.
-- Email verification (send + verify).
-- Change email with confirmation flow.
-- Encrypted phone numbers for security.
-- Role-based access control (user / admin).
-- Account deletion and recovery system.
+- Email verification and resend flow.
+- Change email with secure double verification.
+- Encrypted phone numbers for privacy.
+- Role-based access (user/admin).
+- Account deletion and recovery.
 
 ---
 
 ### 📰 Posts & Comments
-- Create, update, delete posts and comments.
-- Feeds system showing the latest posts.
-- Filtering, pagination, and sorting.
-- Linked comments with post caching for fast load.
+- Create, edit, and delete posts and comments.
+- Fetch feeds (recent posts with pagination and filters).
+- Media uploads (images, videos) via *AWS S3*.
+- Feeds optimized using MongoDB indexes and aggregation.
+- Cached friend and blacklist data using *Redis*.
 
 ---
 
-### 🤝 Friends & Blacklist
-- Send and manage friend requests.
-- Accept, reject, or remove friends.
-- Block/unblock users (Blacklist System).
-- Cached in **Redis** per user for instant access.
+### 🤝 Friends & Social Graph
+- Send and accept friend requests.
+- Manage and block/unblock users.
+- Cached blacklist & friends list in Redis.
+- Efficient search and suggestions.
 
 ---
 
 ### 💬 Real-Time Chat
-- Implemented using **Socket.io** with a clean **Gateway → Service → Event** structure.
+- Built with *Socket.io* using *Gateway → Service → Event* design pattern:
+  - *Gateway Layer* manages socket connections.
+  - *Service Layer* holds chat logic.
+  - *Event Layer* handles real-time broadcasting.
 - Supports:
-  - 1:1 private chats.
-  - Group chats with admins and members.
-- Handles message delivery, read receipts, and persistence.
-- Redis used for room/user mapping and status tracking.
+  - 1:1 private messaging.
+  - Group chats with admin/member roles.
+- Redis used for session, presence, and room management.
 
 ---
 
-### 🧑‍💼 Admin Features
-- **Freeze user accounts**:
-  - ⏳ Period freeze (temporary restriction).
-  - 🚫 Strict freeze (permanent restriction).
-- **Delete user accounts** permanently.
-- Manage users, groups, and content moderation.
-- Protected admin APIs via role-based middleware.
+### 🧑‍💼 Admin System
+- Freeze user accounts:
+  - ⏳ *Periodic freeze* (temporary).
+  - 🚫 *Strict freeze* (permanent).
+- Delete user accounts.
+- Access protected endpoints with role-based middleware.
+- User moderation and audit logging.
 
 ---
 
 ### 🧠 Business Logic
-- Secure email change verification with dual confirmation.
-- Friend request & blocking logic.
-- Phone encryption & validation.
-- Feed generation logic.
-- User search & recommendations.
+- Email change verification (confirm new before apply).
+- Phone encryption with hashing.
+- Privacy handling for blocked users.
+- Feed relevance sorting.
+- Validation with *Zod* (strict runtime schema validation).
 
 ---
 
 ## ⚡ Performance & Security
-- **Helmet** for secure HTTP headers.
-- **Pino** for high-speed structured logging.
-- **Redis Cache** for hot data (friends, blacklist, feeds).
-- **OAuth2 + JWT** authentication.
-- **Rate limiting** and validation middleware.
-- **OOP-based TypeScript** with strong typing for maintainability.
+- *Helmet* for secure HTTP headers.
+- *Pino* for ultra-fast structured logging.
+- *Redis* for caching and socket session management.
+- *Zod* for data validation at API layer.
+- *OAuth2 + JWT* for secure authentication.
+- *Rate limiting* and input sanitization middleware.
+- Strict *TypeScript typing* and OOP design for maintainability.
 
 ---
 
 ## 🧱 Architecture Overview
-
-### 🧩 Design Pattern & Structure
-- **Layered OOP architecture**:
-  - `Controllers` handle requests/responses.
-  - `Services` manage business logic.
-  - `Repositories` abstract database logic.
-- **Gateway-Service-Event** structure for WebSocket management.
-- **Dependency injection** pattern for scalability.
-- **REST + GraphQL APIs** working together for flexible client usage.
+- *Layered OOP Architecture* → Controller / Service / Repository.
+- *Gateway-Service-Event* pattern for WebSocket logic.
+- *Dependency Injection* for scalability and testability.
+- *REST + GraphQL APIs* working seamlessly.
+- *AWS S3 integration* for media uploads.
+- *Swagger UI* for automatic API documentation.
 
 ---
 
@@ -90,26 +91,29 @@ featuring a clean **OOP architecture**, **Redis caching**, **real-time chat**, a
 
 | Layer | Technology |
 |-------|-------------|
-| **Language** | TypeScript |
-| **Backend** | Node.js + Express |
-| **Database** | MongoDB (Mongoose) |
-| **Cache** | Redis |
-| **Auth** | OAuth2, JWT |
-| **Real-time** | Socket.io |
-| **Security** | Helmet, Encryption |
-| **Docs** | Swagger |
-| **Logging** | Pino |
-| **Pattern** | OOP + Design Patterns |
-| **Upcoming** | BullMQ (background jobs), Real-time Notifications |
+| *Language* | TypeScript |
+| *Backend* | Node.js, Express |
+| *Database* | MongoDB (Mongoose) |
+| *Cache* | Redis |
+| *Auth* | OAuth2, JWT |
+| *Real-time* | Socket.io |
+| *Validation* | Zod |
+| *Storage* | AWS S3 |
+| *Security* | Helmet, Encryption |
+| *Docs* | Swagger |
+| *Logging* | Pino |
+| *Architecture* | OOP + Design Patterns |
+| *Upcoming* | BullMQ, Notifications, Docker, AWS Deploy, Nginx Proxy |
 
 ---
 
 ## 🔜 Upcoming Features
-- 📬 **BullMQ integration** for queued email jobs and background tasks.  
-- 🔔 **Real-time notifications** for likes, comments, and friend requests.  
-- 📈 **User analytics & activity tracking.**  
-- 🧑‍💼 **Admin dashboard** for moderation and statistics.  
-- 🧱 **Microservices structure** with message queues (Kafka/RabbitMQ).
+- 📬 *BullMQ integration* for background email and notification queues.  
+- 🔔 *Real-Time Notifications* for likes, comments, and requests.  
+- 🐳 *Dockerized setup* for production deployment.  
+- 🌐 *AWS + Nginx deployment* for scalability.  
+- 🧾 *Analytics dashboard* for activity tracking.  
+- 🧑‍💼 *Admin dashboard (React UI)* for moderation and management.
 
 ---
 👉 http://localhost:3000/api-docs
