@@ -1,44 +1,47 @@
+
 import { Server as ServerScoket, Socket } from "socket.io";
 import { Server } from "http";
 import Jwt from "jsonwebtoken";
 import { BadRequestException } from "../common/Errors";
 import { JwtPayloadCustom } from "../common";
 import { ChatInitialization } from "../modules/Chat/chat";
-export const connectedSockets = new Map<string, string[]>();
+import { logger } from "../middlwares";
+import { redis } from "../utils";
+
 let io: ServerScoket | null = null;
+async function socketAuthanticationMiddleware(socket: Socket, next: Function) {
+  try {
+    const token = socket.handshake.auth.authorization;
+    const decodedData = Jwt.verify(
+      token,
+      process.env.SECRET_KEY as string
+    ) as JwtPayloadCustom;
+    socket.data = { userId: decodedData.id };
 
-function socketAuthanticationMiddleware(socket: Socket, next: Function) {
-  const token = socket.handshake.auth.authorization;
-  const decodedData = Jwt.verify(token, process.env.SECRET_KEY as string) as JwtPayloadCustom;
+    await redis.sadd(`user_sockets:${decodedData.id}`, socket.id);
 
-  socket.data = { userId: decodedData.id };
+    await redis.sadd("online_users", decodedData.id as string);
+    socket.emit("connected", {
+      user: { _id: decodedData.id, username: decodedData.username },
+    });
 
-
-  const userTabs = connectedSockets.get(socket.data.userId) || [];
-  userTabs.push(socket.id);
-  connectedSockets.set(socket.data.userId, userTabs);
-
-  socket.emit("connected", {
-    user: { _id: socket.data.userId, username: decodedData.username },
-  });
-
-  next();
+    next();
+  } catch (error) {
+    logger.error(`Socket authentication error:, ${error}`);
+    next(new BadRequestException("Authentication error"));
+  }
 }
 
 function socketDisconnection(socket: Socket) {
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     const userId = socket.data.userId;
-    let userTabs = connectedSockets.get(userId) || [];
-    userTabs = userTabs.filter((id) => id !== socket.id);
+    await redis.srem(`user_sockets:${userId}`, socket.id);
+    const remaining = await redis.scard(`user_sockets:${userId}`);
 
-    if (userTabs.length === 0) {
-      connectedSockets.delete(userId);
+    if (remaining === 0) {
+      await redis.srem("online_users", userId);
 
       socket.broadcast.emit("userOffline", { userId });
-    } else {
-      connectedSockets.set(userId, userTabs);
-
-      socket.broadcast.emit("userOnline", { userId });
     }
   });
 }
@@ -50,18 +53,19 @@ export const ioInitalization = (server: Server) => {
 
   io.use(socketAuthanticationMiddleware);
 
-  io.on("connection", (socket: Socket) => {
-    console.log("connection", socket.id);
+  io.on("connection", async (socket: Socket) => {
+    const userId = socket.data.userId;
 
-    socket.broadcast.emit("userOnline", { userId: socket.data.userId });
+    logger.info(`${socket.id} connected`);
+
+    socket.broadcast.emit("userOnline", { userId });
 
     socketDisconnection(socket);
-
     ChatInitialization(socket);
+    const onlineUserIds = await redis.smembers("online_users");
+    const filtered = onlineUserIds.filter((id) => id !== userId);
 
-
-    const onlineUserIds = Array.from(connectedSockets.keys()).filter(id => id !== socket.data.userId);
-    socket.emit("allOnlineUsers", { onlineUserIds });
+    socket.emit("allOnlineUsers", { onlineUserIds: filtered });
   });
 };
 

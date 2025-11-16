@@ -11,6 +11,7 @@ import {
 import {
   compareHash,
   createAndSendOTP,
+  emailQueue,
   encrypt,
   generateAccessToken,
   generateTokens,
@@ -31,7 +32,10 @@ class AuthServices {
       ...signUpDTO,
       phone: encrypt(signUpDTO.phone ),
     });
-    await createAndSendOTP(signUpDTO.email);
+    emailQueue.add("sendEmail", {
+      to: created.email,
+      type: "confirmation",
+    });
     return res.status(201).json({ message: `user created`, created });
   };
   confrim_email = async (req: Request, res: Response) => {
@@ -99,7 +103,10 @@ class AuthServices {
       isConfirmed: false,
     });
     if (!User) throw new notFoundException(`email not found or confimed`, {});
-    await createAndSendOTP(User.email);
+      emailQueue.add("sendEmail", {
+        to: email,
+        type: "confirmation",
+      });
     return res.status(200).send(`OTP sent`);
   };
   loginuser = async (req: Request, res: Response) => {
@@ -143,9 +150,7 @@ class AuthServices {
       token,
       process.env.SECRET_KEY as string,
       async (err: any, decoded: any) => {
-        console.log("decoded:", decoded);
         if (err) {
-          console.log("errrorrr",err);
           return res.sendStatus(403);
         }
         const isexisted = await redis.get(

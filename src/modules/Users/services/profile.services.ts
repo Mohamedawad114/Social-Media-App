@@ -4,8 +4,8 @@ import jwt from "jsonwebtoken";
 import {
   compareHash,
   createAndSendOTP,
-  createAndSendOTP_password,
   decrypt,
+  emailQueue,
   encrypt,
   redis,
   s3_services,
@@ -18,6 +18,8 @@ import {
   IFriendship,
   IGroup,
   IUser,
+  notificationHandler,
+  sendNotificationsToUser,
 } from "../../../common";
 import {
   ResetPasswordDTO,
@@ -33,17 +35,25 @@ import {
   commentRepo,
   conversation_Repo,
   friendshipRepo,
+  NotificationRepo,
   Post_Repo,
   UserRepo,
 } from "../../../repositories";
-import { CommentModel, postModel, UserModel } from "../../../DB/models";
+import {
+  CommentModel,
+  NotifiactionModel,
+  postModel,
+  UserModel,
+} from "../../../DB/models";
 
 export class ProfileServices {
+  constructor() {}
   private userRepo: UserRepo = new UserRepo(UserModel);
   private s3Client = new s3_services();
   private postRepo: Post_Repo = new Post_Repo(postModel);
   private commnetRepo: commentRepo = new commentRepo(CommentModel);
   private friendshipRepo: friendshipRepo = new friendshipRepo();
+  private notificationRepo = new NotificationRepo(NotifiactionModel);
   private conversationRepo: conversation_Repo = new conversation_Repo();
   profile = async (req: Request, res: Response) => {
     const userId = req.user?._id as unknown as mongoose.Types.ObjectId;
@@ -62,7 +72,10 @@ export class ProfileServices {
         email: updateUser.email,
       });
       if (valid_email) throw new conflictException(`email already existed`);
-      await createAndSendOTP(updateUser.email);
+          emailQueue.add("sendEmail", {
+            to: updateUser.email,
+            type: "confirmation",
+          });
       updateUser.isConfirmed = false;
     }
     if (updateUser.phone) {
@@ -109,12 +122,18 @@ export class ProfileServices {
   };
   resetPasswordreq = async (req: Request, res: Response) => {
     const user = req.user;
-    await createAndSendOTP_password(user?.email as string);
+    emailQueue.add("sendEmail", {
+      to: user?.email,
+      type: "reset_Password",
+    });
     return res.status(200).json(SuccessResponse(`OTP is sent`, 200));
   };
   async resendOTP_reset(req: Request, res: Response) {
     const user = req.user;
-    await createAndSendOTP_password(user?.email as string);
+    emailQueue.add("sendEmail", {
+      to: user?.email,
+      type: "reset_Password",
+    });
     return res.status(200).json(SuccessResponse(`OTP sent`, 200));
   }
   resetPasswordconfrim = async (req: Request, res: Response) => {
@@ -192,13 +211,33 @@ export class ProfileServices {
       `friends:${userId}`,
       friendRequestTo
     );
-    if (existing) {
-      throw new BadRequestException("You are already friends");
+    if (existing) throw new BadRequestException("You are already friends");
+    if (
+      user.blockFriends?.includes(userId as mongoose.Types.ObjectId) ||
+      (await this.friendshipRepo.findOneDocument({
+        requestFromId: userId,
+        requestToId: friendRequestTo,
+      }))
+    ) {
+      throw new BadRequestException("can't send friendship");
     }
     const friendshipRequest = await this.friendshipRepo.createDocument({
       requestFromId: userId,
       requestToId: friendRequestTo,
     });
+    const { title, content } = notificationHandler("friend_request", {
+      username: `${req.user?.username}`,
+    });
+    const notification = await this.notificationRepo.createDocument({
+      userId: friendRequestTo,
+      title,
+      content,
+    });
+    await sendNotificationsToUser(
+      friendRequestTo,
+      notification,
+      "friend_request"
+    );
     return res
       .status(201)
       .json(SuccessResponse("request send", 201, { friendshipRequest }));
@@ -217,6 +256,19 @@ export class ProfileServices {
     if (response == friendshipEnum.accepted) {
       await redis.sadd(`friends:${userId}`, requestFromId);
       await redis.sadd(`friends:${requestFromId}`, userId as any);
+      const { title, content } = notificationHandler("friend_response", {
+        username: `${req.user?.username}`,
+      });
+      const notification = await this.notificationRepo.createDocument({
+        userId: requestFromId,
+        title,
+        content,
+      });
+      await sendNotificationsToUser(
+        requestFromId,
+        notification,
+        "friend_response"
+      );
     }
     return res
       .status(200)
@@ -392,6 +444,7 @@ export class ProfileServices {
   };
   logout = async (req: Request, res: Response) => {
     const token = req.cookies.refreshToken;
+    const accessToken = req.headers["authorization"]?.split(" ")[1];
     if (!token) return res.sendStatus(204);
     jwt.verify(
       token,
@@ -399,6 +452,12 @@ export class ProfileServices {
       async (err: any, decoded: any) => {
         if (!err && decoded.jti) {
           await redis.del(`refreshToken:${decoded.id}:${decoded.jti}`);
+          await redis.set(
+            `tokens_blacklist:${accessToken}`,
+            "0",
+            "EX",
+            60 * 30
+          );
         }
         return res.clearCookie("refreshToken").sendStatus(204);
       }
@@ -441,7 +500,6 @@ export class ProfileServices {
       .status(200)
       .json(SuccessResponse("account deleted", 200, { deleted }));
   };
-
   //graphQl
   profileInfo = async (userId: string) => {
     const user = await this.userRepo.findByIdDocument(userId, {
@@ -498,8 +556,6 @@ export class ProfileServices {
       }
     );
     if (!requests.length) return "not found requests";
-    console.log({ userId, status, requests });
-
     return requests;
   };
 }

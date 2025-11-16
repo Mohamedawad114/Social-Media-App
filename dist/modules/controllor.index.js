@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.homeRouter = exports.adminRouter = exports.postControllor = exports.profileControllor = exports.authControllor = void 0;
+var auth_controllor_1 = require("./Users/controllor/auth.controllor");
+Object.defineProperty(exports, "authControllor", { enumerable: true, get: function () { return auth_controllor_1.authControllor; } });
+var profile_controllor_1 = require("./Users/controllor/profile.controllor");
+Object.defineProperty(exports, "profileControllor", { enumerable: true, get: function () { return profile_controllor_1.profileControllor; } });
+var Post_controllor_1 = require("./Posts/Post.controllor");
+Object.defineProperty(exports, "postControllor", { enumerable: true, get: function () { return Post_controllor_1.postControllor; } });
+var admin_controller_index_1 = require("./admin.controller.index");
+Object.defineProperty(exports, "adminRouter", { enumerable: true, get: function () { return admin_controller_index_1.adminRouter; } });
+var home_controller_1 = require("./home-page/home.controller");
+Object.defineProperty(exports, "homeRouter", { enumerable: true, get: function () { return home_controller_1.homeRouter; } });

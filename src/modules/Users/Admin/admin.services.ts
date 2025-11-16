@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { commentRepo, Post_Repo, UserRepo } from "../../../repositories";
 import { CommentModel, postModel, UserModel } from "../../../DB/models";
-import { freezeAccount, redis, s3_services } from "../../../utils";
+import { emailQueue, freezeAccount, redis, s3_services } from "../../../utils";
 import { SuccessResponse } from "../../../utils";
 import { notFoundException } from "../../../common/Errors";
 
@@ -44,7 +44,9 @@ class AdminServices {
     if (!user) throw new notFoundException("user not found");
     user.isFreezed = true;
     const updatedUser = await this.userRepo.updateUser(user);
-    await freezeAccount(user.email)
+        emailQueue.add("sendEmail", {
+            to: user?.email,
+            type: "freezeAccount",})
     return res
       .status(200)
       .json(SuccessResponse("user freezed", 200, { updatedUser }));

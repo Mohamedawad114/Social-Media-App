@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import "dotenv/config";
 import { UserModel } from "../DB/models";
-import { notAuthorizedException } from "../common/Errors";
+import { notAuthorizedException, notFoundException } from "../common/Errors";
 import { FailerResponse, redis } from "../utils";
 
 async function verifyToken(
@@ -18,18 +18,26 @@ async function verifyToken(
       token,
       process.env.SECRET_KEY as string
     ) as JwtPayload;
+    if (await redis.get(`tokens_blacklist:${token}`)) {
+      throw new notAuthorizedException("token expired or logout");
+    }
     const user = await UserModel.findById(decoded.id);
-    if (!user) throw new notAuthorizedException("user not found");
+    if (!user) throw new notFoundException("user not found");
     req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json(FailerResponse("Invalid or expired token", 401));
+    return res
+      .status(401)
+      .json(FailerResponse("Invalid or expired token", 401));
   }
 }
 async function isFreezed(req: Request, res: Response, next: NextFunction) {
   if (!req.user) throw new notAuthorizedException("user not found");
   const isFreezed = await redis.get(`freeze:${req.user?._id}`);
-  if (isFreezed) throw new notAuthorizedException("your account freezed please try again later");
+  if (isFreezed)
+    throw new notAuthorizedException(
+      "your account freezed please try again later"
+    );
   next();
 }
 
@@ -44,17 +52,17 @@ async function IsAdmin(
   next();
 }
 export async function verifyGraphQLContext(req: any) {
-   const authHeader = req.headers.authorization;
-   if (!authHeader)return null; 
+  const authHeader = req.headers.authorization;
+  if (!authHeader) throw new notAuthorizedException("no token provided");
   const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return null;
+  if (!token) throw new notAuthorizedException("no token provided");
   const decoded = jwt.verify(
     token,
     process.env.SECRET_KEY as string
   ) as JwtPayload;
   const User = await UserModel.findById(decoded.id);
-  if (!User) throw new Error("User not found");
+  if (!User) throw new notFoundException("user not found");
   return User;
 }
 
-export { verifyToken,IsAdmin ,isFreezed};
+export { verifyToken, IsAdmin, isFreezed };

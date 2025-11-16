@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+  social-app-dev:
+    build:
+      context: .
+      target: dev
+    container_name: social-app-dev-con  
+    ports:
+      - "5000:3000"
+    volumes:
+      - ./src:/app/src:ro
+    env_file:
+      - dev.env
+    depends_on:
+      - mongo
+      - redis  
+  mongo:
+    image: mongo:latest
+    container_name: mongo-con
+    ports:
+      - "27017:27017"
+    volumes:
+    - mongo-data:/data/db
+  redis:
+    image: redis:latest
+    container_name: redis-con
+    volumes:
+      - redis-data:/data

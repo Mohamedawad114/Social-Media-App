@@ -7,7 +7,6 @@ import { Sys_Role, Tokens } from "../../common";
 
 export const generateTokens = async ({ res, role = Sys_Role.user, id,username }:Tokens) => {
   const jti = uuidV4();
-  await redis.set(`refreshToken:${id}:${jti}`, "1", "EX", 60 * 60 * 24 * 7);
   const accessToken = jwt.sign(
     {
       id: id,
@@ -19,6 +18,7 @@ export const generateTokens = async ({ res, role = Sys_Role.user, id,username }:
       expiresIn: "30m",
     }
   );
+  redis.set(`accessToken:${id}:${jti}`, "1", "EX", 60 * 30);
   const refreshToken = jwt.sign(
     {
       id: id,

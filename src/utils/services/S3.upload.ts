@@ -45,7 +45,7 @@ export class s3_services {
     await this.s3Client.send(putCommand);
     return {
       Key: key_name,
-    };
+    }; 
   }
   async upload_files(files: Express.Multer.File[], key: string) {
     let Urls: string[] = [];

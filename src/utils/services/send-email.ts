@@ -1,9 +1,9 @@
 import nodemailer from "nodemailer";
-import { EventEmitter } from "node:events";
 import { customAlphabet } from "nanoid";
 import bcrypt from "bcrypt";
 import { redis } from "./redis";
 import { IEmailargument } from "../../common";
+import { logger } from "../../middlwares";
 const createOTP = customAlphabet(`0123456789zxcvbnmalksjdhfgqwretruop`, 6);
 
 async function sendEmail({ to, subject, html }:IEmailargument ) {
@@ -22,15 +22,11 @@ async function sendEmail({ to, subject, html }:IEmailargument ) {
       subject: subject,
       html: html,
     });
-    console.log(Info.response);
+    logger.info(Info.response);
   } catch (err) {
-    console.log(err);
+    logger.error(err);
   }
-}
-export const emittir = new EventEmitter();
-emittir.on("sendEmail", (args) => {
-  sendEmail(args);
-});
+};
 export const createAndSendOTP = async (email:string) => {
   const OTP = createOTP();
   const html = `
@@ -47,12 +43,13 @@ export const createAndSendOTP = async (email:string) => {
       `;
   const hashOTP = await bcrypt.hash(OTP, parseInt(process.env.SALT as string));
   await redis.set(`otp_${email}`, hashOTP, "EX", 2 * 60);
-  emittir.emit("sendEmail", {
+    sendEmail({
     to: email,
-    subject: "confirmation Email",
+    subject: "reset password",
     html: html,
   });
 };
+
 export const createAndSendOTP_password = async (email:string) => {
   const OTP = createOTP();
   const resetHtml = `<div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
@@ -69,7 +66,7 @@ export const createAndSendOTP_password = async (email:string) => {
 </div>`;
   const hashOTP = await bcrypt.hash(OTP, parseInt(process.env.SALT as string));
   await redis.set(`otp_reset:${email}`, hashOTP, "EX", 2 * 60);
-  emittir.emit("sendEmail", {
+  sendEmail({
     to: email,
     subject: "reset password",
     html: resetHtml,
@@ -100,9 +97,9 @@ export const freezeAccount = async (email:string) => {
   </div>
 </div>
 `;
-  emittir.emit("sendEmail", {
+  sendEmail({
     to: email,
-    subject: "تم تجميد حسابك",
+    subject: "reset password",
     html: bannedHtml,
   });
 };

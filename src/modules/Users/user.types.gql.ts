@@ -1,9 +1,11 @@
 import {
   GraphQLID,
+  GraphQLInt,
   GraphQLList,
   GraphQLObjectType,
   GraphQLString,
 } from "graphql";
+import dayjs from "dayjs";
 
 export const UserProfileType = new GraphQLObjectType({
   name: "UserProfile",
@@ -15,7 +17,13 @@ export const UserProfileType = new GraphQLObjectType({
     DOB: { type: GraphQLString },
     email: { type: GraphQLString },
     phone: { type: GraphQLString },
-  },
+    age: {
+      type: GraphQLInt,
+      resolve(parent) {
+       return  !parent.DOB ? null : dayjs().diff(dayjs(parent.DOB), "year");
+      }
+  }
+  }
 });
 
 export const BlockedUserType = new GraphQLObjectType({

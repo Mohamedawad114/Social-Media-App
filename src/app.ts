@@ -12,6 +12,7 @@ import { httpLogger, verifyGraphQLContext } from "./middlwares";
 import dotenv from "dotenv";
 import { createHandler } from "graphql-http/lib/use/express";
 import { schema } from "./graphQl";
+import { swaggerDocs } from "./swagger.config";
 dotenv.config({ path: "./dev.env" });
 
 const app = express();
@@ -38,6 +39,7 @@ app.use("/api/profile", controllors.profileControllor);
 app.use("/api/posts", controllors.postControllor);
 app.use("/api/admin", controllors.adminRouter);
 
+swaggerDocs(app);
 app.use((req: Request, res: Response) => {
   res.status(404).json({ message: `Page Not Found` });
 });
@@ -64,5 +66,4 @@ app.use(
     });
   }
 );
-
 export default app;

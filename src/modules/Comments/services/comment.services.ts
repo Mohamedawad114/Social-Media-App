@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
-import { CommentModel, postModel } from "../../../DB/models";
-import { commentRepo, Post_Repo } from "../../../repositories";
+import { CommentModel, NotifiactionModel, postModel } from "../../../DB/models";
+import {
+  commentRepo,
+  NotificationRepo,
+  Post_Repo,
+} from "../../../repositories";
 import { s3_services, SuccessResponse } from "../../../utils";
 import { commentDTO, updateCommentDTO } from "./comment.dto";
 import mongoose from "mongoose";
@@ -9,11 +13,18 @@ import {
   notAuthorizedException,
   notFoundException,
 } from "../../../common/Errors";
-import { friends_Blacklist } from "../../../common";
+import {
+  friends_Blacklist,
+  notificationHandler,
+  sendNotificationsToUser,
+} from "../../../common";
 
 class Comment_services {
   private s3Client = new s3_services();
   private commentRepo = new commentRepo(CommentModel);
+  private notificationRepo: NotificationRepo = new NotificationRepo(
+    NotifiactionModel
+  );
   private postRepo = new Post_Repo(postModel);
 
   getComments = async (req: Request, res: Response): Promise<Response> => {
@@ -122,6 +133,20 @@ class Comment_services {
     });
     post.commentCount = Number(post.commentCount) + 1;
     await this.postRepo.updatePost(post);
+    const { title, content } = notificationHandler("comment_post", {
+      username: `${req.user?.username}`,
+      commentSnippet: created.content?.substring(0, 20) || "attachment",
+    });
+    const notification = await this.notificationRepo.createDocument({
+      userId: post.userId,
+      title,
+      content,
+    });
+    await sendNotificationsToUser(
+      post.userId as string,
+      notification,
+      "comment_post"
+    );
     return res
       .status(201)
       .json(SuccessResponse("comment created", 201, { created }));
@@ -157,6 +182,20 @@ class Comment_services {
     if (!post) throw new notFoundException("post not found");
     post.commentCount = Number(post.commentCount) + 1;
     await this.postRepo.updatePost(post);
+    const { title, content } = notificationHandler("reply_comment", {
+      username: `${req.user?.username}`,
+      commentSnippet: created.content?.substring(0, 20) || "attachment",
+    });
+    const notification = await this.notificationRepo.createDocument({
+      userId: parentComment.userId,
+      title,
+      content,
+    });
+    await sendNotificationsToUser(
+      post.userId as string,
+      notification,
+      "reply_comment"
+    );
     return res
       .status(201)
       .json(SuccessResponse("Reply shared", 201, { created }));
@@ -213,6 +252,19 @@ class Comment_services {
           $push: { reactions: { userId, Reaction: reaction } },
           $inc: { reactionsCount: 1 },
         }
+      );
+      const { title, content } = notificationHandler("like_comment", {
+        username: `${req.user?.username}`,
+      });
+      const notification = await this.notificationRepo.createDocument({
+        userId: comment.userId,
+        title,
+        content,
+      });
+      await sendNotificationsToUser(
+        comment.userId as string,
+        notification,
+        "like_comment"
       );
     }
     return res.sendStatus(204);

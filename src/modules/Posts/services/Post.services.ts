@@ -1,14 +1,24 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { commentRepo, Post_Repo } from "../../../repositories";
-import { CommentModel, postModel } from "../../../DB/models";
+import {
+  commentRepo,
+  NotificationRepo,
+  Post_Repo,
+} from "../../../repositories";
+import { CommentModel, NotifiactionModel, postModel } from "../../../DB/models";
 import { redis, s3_services, SuccessResponse } from "../../../utils";
 import { BadRequestException, notFoundException } from "../../../common/Errors";
-import { friends_Blacklist } from "../../../common";
-import { userInfo } from "node:os";
+import {
+  friends_Blacklist,
+  notificationHandler,
+  sendNotificationsToUser,
+} from "../../../common";
 
 export class Post_services {
   private postRepo: Post_Repo = new Post_Repo(postModel);
+  private notificationRepo: NotificationRepo = new NotificationRepo(
+    NotifiactionModel
+  );
   private commentRepo: commentRepo = new commentRepo(CommentModel);
   private s3Client = new s3_services();
 
@@ -142,6 +152,19 @@ export class Post_services {
           $inc: { reactionCount: 1 },
         }
       );
+      const { title, content } = notificationHandler("like_post", {
+        username: `${req.user?.username}`,
+      });
+      const notification = await this.notificationRepo.createDocument({
+        userId: post.userId,
+        title,
+        content,
+      });
+      await sendNotificationsToUser(
+        post.userId as string,
+        notification,
+        "like_post"
+      );
     }
     return res.sendStatus(204);
   };
@@ -199,7 +222,7 @@ export class Post_services {
       .json(SuccessResponse("post deleted", 200, { PostDeleted }));
   };
   //graph
-  profilePosts = async (userId:string,page=1) => {
+  profilePosts = async (userId: string, page = 1) => {
     const limit = 15;
     const offset = (page - 1) * limit;
     const myposts = await this.postRepo.findDocuments(
@@ -214,7 +237,7 @@ export class Post_services {
       }
     );
     if (!myposts.length) throw new notFoundException("posts not found");
-    return  myposts ;
+    return myposts;
   };
 }
 export default new Post_services();

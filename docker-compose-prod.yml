@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  social-app-prod:
+    build:
+      context: .
+      target: prod
+    container_name: social-app-prod-con  
+    ports:
+      - "5001:3000"
+    env_file:
+      - prod.env

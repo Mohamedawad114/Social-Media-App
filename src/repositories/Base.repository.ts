@@ -58,10 +58,24 @@ export abstract class BaseRepository<T> {
   ): Promise<UpdateWriteOpResult> {
     return await this.model.updateOne(filter, payload, options as any);
   }
+  async updateManyDocuments(
+    filter: FilterQuery<T>,
+    payload: UpdateQuery<T>,
+    options?: QueryOptions<T>
+  ): Promise<UpdateWriteOpResult> {
+    return await this.model.updateMany(filter, payload, options as any);
+  }
   async deleteManyDocuments(
     filter: FilterQuery<T>,
     options?: QueryOptions<T>
   ): Promise<{ deletedCount?: number }> {
     return this.model.deleteMany(filter, options as any);
   }
+  async countDocuments(
+    filter: FilterQuery<T>,
+    options?: QueryOptions<T>
+  ): Promise<number> {
+    return this.model.countDocuments(filter, options as any);
+  }
+     
 }
