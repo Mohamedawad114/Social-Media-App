@@ -1,7 +1,7 @@
-🚀 Social Media Platform (Node.js + TypeScript + OOP)
+*🚀 Social Media Platform (Node.js + TypeScript + OOP)
 A modern, scalable social media backend built with TypeScript, Node.js, Express, and MongoDB,
 featuring OOP architecture, Zod validation, AWS S3 integration, Redis caching, Socket.io real-time chat,
-and secure OAuth2 authentication.
+and secure OAuth2 authentication.*
 
 🧩 Core Features
 👤 User Management
@@ -147,6 +147,10 @@ OAuth2 + JWT for secure authentication.
 Rate limiting + sanitization.
 
 Strict TypeScript types and OOP structure.
+
+*for testing*
+
+-- use k6 for test the load
 
 🧱 Architecture Overview
 Layered OOP Architecture → Controller / Service / Repository.
