@@ -15,8 +15,10 @@ CMD ["npm","run","start:dev"]
 
 FROM base as prod
 
-RUN npm i --only=production
+RUN npm install
 
 COPY . .
+
 RUN npm run build 
+RUN npm prune --production
 CMD ["npm","run","start"]

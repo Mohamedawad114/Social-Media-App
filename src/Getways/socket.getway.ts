@@ -17,9 +17,7 @@ async function socketAuthanticationMiddleware(socket: Socket, next: Function) {
       process.env.SECRET_KEY as string
     ) as JwtPayloadCustom;
     socket.data = { userId: decodedData.id };
-
     await redis.sadd(`user_sockets:${decodedData.id}`, socket.id);
-
     await redis.sadd("online_users", decodedData.id as string);
     socket.emit("connected", {
       user: { _id: decodedData.id, username: decodedData.username },
@@ -37,10 +35,8 @@ function socketDisconnection(socket: Socket) {
     const userId = socket.data.userId;
     await redis.srem(`user_sockets:${userId}`, socket.id);
     const remaining = await redis.scard(`user_sockets:${userId}`);
-
     if (remaining === 0) {
       await redis.srem("online_users", userId);
-
       socket.broadcast.emit("userOffline", { userId });
     }
   });
@@ -55,16 +51,12 @@ export const ioInitalization = (server: Server) => {
 
   io.on("connection", async (socket: Socket) => {
     const userId = socket.data.userId;
-
     logger.info(`${socket.id} connected`);
-
     socket.broadcast.emit("userOnline", { userId });
-
     socketDisconnection(socket);
     ChatInitialization(socket);
     const onlineUserIds = await redis.smembers("online_users");
     const filtered = onlineUserIds.filter((id) => id !== userId);
-
     socket.emit("allOnlineUsers", { onlineUserIds: filtered });
   });
 };
