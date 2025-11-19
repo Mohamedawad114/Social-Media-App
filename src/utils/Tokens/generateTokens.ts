@@ -33,8 +33,8 @@ export const generateTokens = async ({ res, role = Sys_Role.user, id,username }:
   );
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: "strict",
+    secure: false, //true in production, 
+    sameSite: "lax", //change to strict in production,
     maxAge: 1000 * 60 * 60 * 24 * 7,
   });
   return accessToken;
