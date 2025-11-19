@@ -31,6 +31,11 @@ app.all(
     },
   })
 );
+app.get("/", (req, res) => {
+  res.send(
+    "Welcome to the Social App API 🚀 Server is running successfully ❤️"
+  );
+});
 
 db_connection();
 app.use("/api/home", controllors.homeRouter);
