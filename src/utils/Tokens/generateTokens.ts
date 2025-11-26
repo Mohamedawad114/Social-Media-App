@@ -18,7 +18,6 @@ export const generateTokens = async ({ res, role = Sys_Role.user, id,username }:
       expiresIn: "30m",
     }
   );
-  redis.set(`accessToken:${id}:${jti}`, "1", "EX", 60 * 30);
   const refreshToken = jwt.sign(
     {
       id: id,
@@ -31,6 +30,7 @@ export const generateTokens = async ({ res, role = Sys_Role.user, id,username }:
       expiresIn: "7d",
     }
   );
+  redis.set(`refreshToken:${id}:${jti}`, "1", "EX", 60 * 30*7);
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: true,

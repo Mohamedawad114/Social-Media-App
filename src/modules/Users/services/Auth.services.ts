@@ -10,7 +10,6 @@ import {
 } from "../../../common/Errors";
 import {
   compareHash,
-  createAndSendOTP,
   emailQueue,
   encrypt,
   generateAccessToken,
