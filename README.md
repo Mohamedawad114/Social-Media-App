@@ -213,6 +213,8 @@ SSL via Certbot (Let's Encrypt)
 
 🧑‍💼 Admin panel (React).
 
+ live for test:http://16.171.119.160/api
+
 👉 docs: http://localhost:3000/api-docs
 
 ⚙ Installation
