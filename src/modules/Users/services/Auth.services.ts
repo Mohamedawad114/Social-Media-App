@@ -70,7 +70,7 @@ class AuthServices {
     const payload = await this.verifyloginGoogle(idToken);
     const { name, email, email_verified, sub } = payload as any;
     if (!email_verified) throw new BadRequestException("email not verified");
-    const user = await this.userRepo.findOneDocument({});
+    const user = await this.userRepo.findOneDocument({email});
     if (user) {
       const accessToken = await generateAccessToken({
         id: user?._id as string,
